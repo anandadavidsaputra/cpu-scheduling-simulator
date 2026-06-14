@@ -1,0 +1,26 @@
+=== HASIL SIMULASI: FCFS ===
+Gantt Chart (Visualisasi Linier): [ P1 P2 P3 P4 ]
+
+ID	Arrival	Burst	Priority	Waiting	Turnaround
+1	0	5	2		0	5
+2	1	3	1		4	7
+3	2	8	3		6	14
+4	3	6	4		13	19
+
+Rata-rata Waiting Time    : 5.75
+Rata-rata Turnaround Time : 11.25
+--------------------------------------------------
+
+=== HASIL SIMULASI: Priority Non-Preemptive ===
+Gantt Chart (Visualisasi Linier): [ P1 P2 P3 P4 ]
+
+ID	Arrival	Burst	Priority	Waiting	Turnaround
+1	0	5	2		0	5
+2	1	3	1		4	7
+3	2	8	3		6	14
+4	3	6	4		13	19
+
+Rata-rata Waiting Time    : 5.75
+Rata-rata Turnaround Time : 11.25
+--------------------------------------------------
+
