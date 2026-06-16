@@ -1,9 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <string>
 #include <algorithm>
-#include <windows.h> // Library untuk membuka GUI File Dialog di Windows
+#include <windows.h> 
 
 using namespace std;
 
@@ -13,185 +12,165 @@ struct Process {
     int burstTime;
     int priority;
     int waitingTime;
-    int turnaroundTime;
-    int completionTime;
-    bool isCompleted;
+    bool isCompleted; 
 };
 
-// Fungsi untuk membuka File Explorer (GUI) dan mengambil path file
-string openFileDialog() {
+bool sortByArrivalTime(Process a, Process b) {
+    return a.arrivalTime < b.arrivalTime;
+}
+
+string bukaFileExplorer() {
     OPENFILENAME ofn;
-    char szFile[260] = {0};
+    char namaFile[MAX_PATH] = "";
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = NULL;
-    ofn.lpstrFile = szFile;
-    ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = "Text/CSV Files\0*.txt;*.csv\0All Files\0*.*\0"; // Filter format file
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = NULL;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    ofn.lpstrFilter = "Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = namaFile;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.lpstrDefExt = "txt";
 
-    if (GetOpenFileName(&ofn) == TRUE) {
-        return string(ofn.lpstrFile);
+    if (GetOpenFileName(&ofn)) {
+        return string(namaFile);
     }
-    return ""; // Return kosong jika user membatalkan (cancel)
+    return "";
 }
 
-void readInputFile(const string& filename, vector<Process>& processes) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Error: Gagal membuka file " << filename << "!" << endl;
-        return;
-    }
-    Process p;
-    while (file >> p.id >> p.arrivalTime >> p.burstTime >> p.priority) {
-        p.waitingTime = 0;
-        p.turnaroundTime = 0;
-        p.completionTime = 0;
-        p.isCompleted = false;
-        processes.push_back(p);
-    }
-    file.close();
-}
+// =================================================================
+// 1. METODE FCFS
+// =================================================================
+void executeFCFS(vector<Process> queueList, ofstream& fileOutput) {
+    sort(queueList.begin(), queueList.end(), sortByArrivalTime);
 
-void sortProcesses(vector<Process>& processes) {
-    for (size_t i = 0; i < processes.size() - 1; i++) {
-        for (size_t j = 0; j < processes.size() - i - 1; j++) {
-            if (processes[j].arrivalTime > processes[j + 1].arrivalTime) {
-                swap(processes[j], processes[j + 1]);
-            } else if (processes[j].arrivalTime == processes[j + 1].arrivalTime) {
-                if (processes[j].priority > processes[j + 1].priority) {
-                    swap(processes[j], processes[j + 1]);
-                }
-            }
-        }
-    }
-}
-
-void executeFCFS(vector<Process>& processes) {
-    sortProcesses(processes);
     int currentTime = 0;
+    float totalWaitingTime = 0;
+    int totalProcess = queueList.size();
 
-    for (auto& p : processes) {
-        if (currentTime < p.arrivalTime) {
-            currentTime = p.arrivalTime; 
+    fileOutput << "=== HASIL SIMULASI: FCFS ===\n";
+    fileOutput << "Riwayat Panggilan Antrean:\n";
+
+    for (int i = 0; i < totalProcess; i++) {
+        if (currentTime < queueList[i].arrivalTime) {
+            currentTime = queueList[i].arrivalTime;
         }
-        p.waitingTime = currentTime - p.arrivalTime;
-        p.completionTime = currentTime + p.burstTime;
-        p.turnaroundTime = p.completionTime - p.arrivalTime;
-        currentTime = p.completionTime;
+
+        queueList[i].waitingTime = currentTime - queueList[i].arrivalTime;
+        totalWaitingTime += queueList[i].waitingTime;
+
+        // Output dibikin kaya struk/nomor antrean ke bawah
+        fileOutput << i + 1 << ". Proses P" << queueList[i].id 
+                   << " -> Masuk jam: " << currentTime 
+                   << " | Waktu Tunggu: " << queueList[i].waitingTime << " dtk"
+                   << " | Durasi: " << queueList[i].burstTime << " dtk"
+                   << " | Selesai jam: " << (currentTime + queueList[i].burstTime) << "\n";
+
+        currentTime += queueList[i].burstTime;
     }
+
+    fileOutput << "--------------------------------------------------\n";
+    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " detik\n\n\n";
 }
 
-void executePriorityNonPreemptive(vector<Process>& processes) {
-    int currentTime = 0;
-    int completedCount = 0;
-    int n = processes.size();
+// =================================================================
+// 2. METODE PRIORITY SCHEDULING
+// =================================================================
+void executePriorityNonPreemptive(vector<Process> queueList, ofstream& fileOutput) {
+    int currentTime = 0; 
+    float totalWaitingTime = 0;
+    int totalProcess = queueList.size();
+    int processDone = 0;
+    int urutanPanggil = 1;
 
-    while (completedCount < n) {
-        int idx = -1;
-        int highestPriority = 9999;
+    fileOutput << "=== HASIL SIMULASI: PRIORITY NON-PREEMPTIVE ===\n";
+    fileOutput << "Riwayat Panggilan Antrean:\n";
 
-        for (int i = 0; i < n; i++) {
-            if (processes[i].arrivalTime <= currentTime && !processes[i].isCompleted) {
-                if (processes[i].priority < highestPriority) {
-                    highestPriority = processes[i].priority;
-                    idx = i;
-                } else if (processes[i].priority == highestPriority) {
-                    if (idx == -1 || processes[i].arrivalTime < processes[idx].arrivalTime) {
-                        idx = i;
+    while (processDone < totalProcess) {
+        int selectedIndex = -1;
+        int highestPriority = 99999;       
+        int earliestArrival = 99999;
+
+        for (int i = 0; i < totalProcess; i++) {
+            if (!queueList[i].isCompleted && queueList[i].arrivalTime <= currentTime) {
+                if (queueList[i].priority < highestPriority) {
+                    highestPriority = queueList[i].priority;
+                    earliestArrival = queueList[i].arrivalTime;
+                    selectedIndex = i;
+                } 
+                else if (queueList[i].priority == highestPriority) {
+                    if (queueList[i].arrivalTime < earliestArrival) {
+                        earliestArrival = queueList[i].arrivalTime;
+                        selectedIndex = i;
                     }
                 }
             }
         }
 
-        if (idx != -1) {
-            processes[idx].waitingTime = currentTime - processes[idx].arrivalTime;
-            processes[idx].completionTime = currentTime + processes[idx].burstTime;
-            processes[idx].turnaroundTime = processes[idx].completionTime - processes[idx].arrivalTime;
-            processes[idx].isCompleted = true;
-            currentTime = processes[idx].completionTime;
-            completedCount++;
-        } else {
+        if (selectedIndex == -1) {
             currentTime++; 
+        } 
+        else {
+            int i = selectedIndex;
+            queueList[i].waitingTime = currentTime - queueList[i].arrivalTime;
+            totalWaitingTime += queueList[i].waitingTime;
+
+            // Output dibikin kaya struk/nomor antrean ke bawah, ditambah info kasta
+            fileOutput << urutanPanggil++ << ". Proses P" << queueList[i].id 
+                       << " [Kasta " << queueList[i].priority << "]"
+                       << " -> Masuk jam: " << currentTime 
+                       << " | Waktu Tunggu: " << queueList[i].waitingTime << " dtk"
+                       << " | Durasi: " << queueList[i].burstTime << " dtk"
+                       << " | Selesai jam: " << (currentTime + queueList[i].burstTime) << "\n";
+
+            currentTime += queueList[i].burstTime;
+            queueList[i].isCompleted = true; 
+            processDone++;
         }
     }
-}
 
-void calculateMetricsAndGanttChart(vector<Process>& processes, const string& algoName, ofstream& outFile) {
-    float totalWaitingTime = 0;
-    float totalTurnaroundTime = 0;
-    int n = processes.size();
-
-    outFile << "=== HASIL SIMULASI: " << algoName << " ===\n";
-    
-    vector<Process> ganttProcesses = processes;
-    for (size_t i = 0; i < ganttProcesses.size() - 1; i++) {
-        for (size_t j = 0; j < ganttProcesses.size() - i - 1; j++) {
-            if (ganttProcesses[j].completionTime > ganttProcesses[j + 1].completionTime) {
-                swap(ganttProcesses[j], ganttProcesses[j + 1]);
-            }
-        }
-    }
-
-    outFile << "Gantt Chart (Visualisasi Linier): [ ";
-    for (const auto& p : ganttProcesses) {
-        outFile << "P" << p.id << " ";
-    }
-    outFile << "]\n\n";
-
-    outFile << "ID\tArrival\tBurst\tPriority\tWaiting\tTurnaround\n";
-    for (const auto& p : processes) {
-        outFile << p.id << "\t" << p.arrivalTime << "\t" << p.burstTime << "\t" << p.priority
-                << "\t\t" << p.waitingTime << "\t" << p.turnaroundTime << "\n";
-        totalWaitingTime += p.waitingTime;
-        totalTurnaroundTime += p.turnaroundTime;
-    }
-
-    outFile << "\nRata-rata Waiting Time    : " << (totalWaitingTime / n) << "\n";
-    outFile << "Rata-rata Turnaround Time : " << (totalTurnaroundTime / n) << "\n";
-    outFile << "--------------------------------------------------\n\n";
+    fileOutput << "--------------------------------------------------\n";
+    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " detik\n";
 }
 
 int main() {
-    vector<Process> processList;
+    cout << "Silakan pilih file input.txt dari File Explorer yang muncul..." << endl;
     
-    cout << "Silakan pilih file input (.txt / .csv) melalui jendela direktori yang terbuka..." << endl;
-    
-    // Memanggil fungsi untuk membuka file explorer
-    string filePath = openFileDialog();
+    string pathFile = bukaFileExplorer();
 
-    if (filePath.empty()) {
-        cout << "Operasi dibatalkan. Tidak ada file yang dipilih." << endl;
+    if (pathFile == "") {
+        cout << "Batal milih file. Program berhenti." << endl;
         return 1;
     }
 
-    cout << "File yang dipilih: " << filePath << endl;
+    cout << "File yang dipilih: " << pathFile << endl;
 
-    // Membaca file input dari path yang dipilih user
-    readInputFile(filePath, processList);
+    ifstream fileInput(pathFile);
+    ofstream fileOutput("output_log.txt");
 
-    if (processList.empty()) {
-        cout << "Gagal mengeksekusi: File kosong atau format salah." << endl;
+    if (!fileInput) {
+        cout << "Waduh file gagal dibaca!" << endl;
         return 1;
     }
 
-    ofstream outFile("output_log.txt");
+    vector<Process> dataAntrean;
+    Process p;
 
-    vector<Process> fcfsList = processList;
-    executeFCFS(fcfsList);
-    calculateMetricsAndGanttChart(fcfsList, "FCFS", outFile);
+    while (fileInput >> p.id >> p.arrivalTime >> p.burstTime >> p.priority) {
+        p.waitingTime = 0;
+        p.isCompleted = false;
+        dataAntrean.push_back(p);
+    }
 
-    vector<Process> priorityList = processList;
-    executePriorityNonPreemptive(priorityList);
-    calculateMetricsAndGanttChart(priorityList, "Priority Non-Preemptive", outFile);
+    executeFCFS(dataAntrean, fileOutput);
+    executePriorityNonPreemptive(dataAntrean, fileOutput);
 
-    outFile.close();
-    cout << "Eksekusi berhasil. Log simulasi tersimpan di 'output_log.txt'." << endl;
+    fileInput.close();
+    fileOutput.close();
+
+    cout << "Simulasi kelar! Otomatis buka log hasil..." << endl;
+
+    system("start output_log.txt");
 
     return 0;
 }
