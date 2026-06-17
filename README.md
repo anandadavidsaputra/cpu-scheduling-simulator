@@ -22,7 +22,8 @@ Sebelum menjalankan program, pastikan kamu membuat file bernama `input.txt` di d
 
 ### Contoh Isi File:
 ```text
-1 0 5 2
-2 1 3 1
-3 2 8 3
-4 3 6 4
+1 0 8 3
+2 1 4 1
+3 2 2 5
+4 3 5 2
+5 4 3 4

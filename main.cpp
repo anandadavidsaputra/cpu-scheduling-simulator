@@ -61,16 +61,16 @@ void executeFCFS(vector<Process> queueList, ofstream& fileOutput) {
 
         // Output dibikin kaya struk/nomor antrean ke bawah
         fileOutput << i + 1 << ". Proses P" << queueList[i].id 
-                   << " -> Masuk jam: " << currentTime 
-                   << " | Waktu Tunggu: " << queueList[i].waitingTime << " dtk"
-                   << " | Durasi: " << queueList[i].burstTime << " dtk"
-                   << " | Selesai jam: " << (currentTime + queueList[i].burstTime) << "\n";
+                   << " -> Waktu Masuk: " << currentTime << " menit"
+                   << " | Waktu Tunggu: " << queueList[i].waitingTime << " menit"
+                   << " | Durasi: " << queueList[i].burstTime << " menit"
+                   << " | Waktu Selesai: " << (currentTime + queueList[i].burstTime) << " menit\n";
 
         currentTime += queueList[i].burstTime;
     }
 
     fileOutput << "--------------------------------------------------\n";
-    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " detik\n\n\n";
+    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " menit\n\n\n";
 }
 
 // =================================================================
@@ -117,11 +117,11 @@ void executePriorityNonPreemptive(vector<Process> queueList, ofstream& fileOutpu
 
             // Output dibikin kaya struk/nomor antrean ke bawah, ditambah info kasta
             fileOutput << urutanPanggil++ << ". Proses P" << queueList[i].id 
-                       << " [Kasta " << queueList[i].priority << "]"
-                       << " -> Masuk jam: " << currentTime 
-                       << " | Waktu Tunggu: " << queueList[i].waitingTime << " dtk"
-                       << " | Durasi: " << queueList[i].burstTime << " dtk"
-                       << " | Selesai jam: " << (currentTime + queueList[i].burstTime) << "\n";
+                       << " [Prioritas " << queueList[i].priority << "]"
+                       << " -> Waktu Masuk: " << currentTime << " menit"
+                       << " | Waktu Tunggu: " << queueList[i].waitingTime << " menit"
+                       << " | Durasi: " << queueList[i].burstTime << " menit"
+                       << " | Waktu Selesai: " << (currentTime + queueList[i].burstTime) << " menit\n";
 
             currentTime += queueList[i].burstTime;
             queueList[i].isCompleted = true; 
@@ -130,7 +130,7 @@ void executePriorityNonPreemptive(vector<Process> queueList, ofstream& fileOutpu
     }
 
     fileOutput << "--------------------------------------------------\n";
-    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " detik\n";
+    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " menit\n";
 }
 
 int main() {

@@ -1,0 +1,20 @@
+=== HASIL SIMULASI: FCFS ===
+Riwayat Panggilan Antrean:
+1. Proses P1 -> Waktu Masuk: 0 menit | Waktu Tunggu: 0 menit | Durasi: 8 menit | Waktu Selesai: 8 menit
+2. Proses P2 -> Waktu Masuk: 8 menit | Waktu Tunggu: 7 menit | Durasi: 4 menit | Waktu Selesai: 12 menit
+3. Proses P3 -> Waktu Masuk: 12 menit | Waktu Tunggu: 10 menit | Durasi: 2 menit | Waktu Selesai: 14 menit
+4. Proses P4 -> Waktu Masuk: 14 menit | Waktu Tunggu: 11 menit | Durasi: 5 menit | Waktu Selesai: 19 menit
+5. Proses P5 -> Waktu Masuk: 19 menit | Waktu Tunggu: 15 menit | Durasi: 3 menit | Waktu Selesai: 22 menit
+--------------------------------------------------
+Rata-rata Waiting Time: 8.6 menit
+
+
+=== HASIL SIMULASI: PRIORITY NON-PREEMPTIVE ===
+Riwayat Panggilan Antrean:
+1. Proses P1 [Prioritas 3] -> Waktu Masuk: 0 menit | Waktu Tunggu: 0 menit | Durasi: 8 menit | Waktu Selesai: 8 menit
+2. Proses P2 [Prioritas 1] -> Waktu Masuk: 8 menit | Waktu Tunggu: 7 menit | Durasi: 4 menit | Waktu Selesai: 12 menit
+3. Proses P4 [Prioritas 2] -> Waktu Masuk: 12 menit | Waktu Tunggu: 9 menit | Durasi: 5 menit | Waktu Selesai: 17 menit
+4. Proses P5 [Prioritas 4] -> Waktu Masuk: 17 menit | Waktu Tunggu: 13 menit | Durasi: 3 menit | Waktu Selesai: 20 menit
+5. Proses P3 [Prioritas 5] -> Waktu Masuk: 20 menit | Waktu Tunggu: 18 menit | Durasi: 2 menit | Waktu Selesai: 22 menit
+--------------------------------------------------
+Rata-rata Waiting Time: 9.4 menit
