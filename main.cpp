@@ -6,6 +6,7 @@
 
 using namespace std;
 
+// struktur buat nyimpen data proses
 struct Process {
     int id;
     int arrivalTime;
@@ -15,10 +16,12 @@ struct Process {
     bool isCompleted; 
 };
 
-bool sortByArrivalTime(Process a, Process b) {
+// fungsi bantu buat sorting FCFS
+bool sortByArrival(Process a, Process b) {
     return a.arrivalTime < b.arrivalTime;
 }
 
+// manggil pop up windows explorer
 string bukaFileExplorer() {
     OPENFILENAME ofn;
     char namaFile[MAX_PATH] = "";
@@ -41,134 +44,198 @@ string bukaFileExplorer() {
 // =================================================================
 // 1. METODE FCFS
 // =================================================================
-void executeFCFS(vector<Process> queueList, ofstream& fileOutput) {
-    sort(queueList.begin(), queueList.end(), sortByArrivalTime);
+void jalaninFCFS(vector<Process> pList, ofstream& out) {
+    sort(pList.begin(), pList.end(), sortByArrival);
 
-    int currentTime = 0;
-    float totalWaitingTime = 0;
-    int totalProcess = queueList.size();
+    int waktuSekarang = 0;
+    float totalNunggu = 0;
+    int jmlProses = pList.size();
 
-    fileOutput << "=== HASIL SIMULASI: FCFS ===\n";
-    fileOutput << "Riwayat Panggilan Antrean:\n";
+    out << "=== HASIL SIMULASI: FCFS ===\n";
+    out << "Riwayat Panggilan Antrean:\n";
 
-    for (int i = 0; i < totalProcess; i++) {
-        if (currentTime < queueList[i].arrivalTime) {
-            currentTime = queueList[i].arrivalTime;
+    for (int i = 0; i < jmlProses; i++) {
+        // kalo cpu nganggur nungguin proses dateng
+        if (waktuSekarang < pList[i].arrivalTime) {   
+            waktuSekarang = pList[i].arrivalTime;
         }
 
-        queueList[i].waitingTime = currentTime - queueList[i].arrivalTime;
-        totalWaitingTime += queueList[i].waitingTime;
+        pList[i].waitingTime = waktuSekarang - pList[i].arrivalTime;
+        totalNunggu += pList[i].waitingTime;
 
-        // Output dibikin kaya struk/nomor antrean ke bawah
-        fileOutput << i + 1 << ". Proses P" << queueList[i].id 
-                   << " -> Waktu Masuk: " << currentTime << " menit"
-                   << " | Waktu Tunggu: " << queueList[i].waitingTime << " menit"
-                   << " | Durasi: " << queueList[i].burstTime << " menit"
-                   << " | Waktu Selesai: " << (currentTime + queueList[i].burstTime) << " menit\n";
+        out << i + 1 << ". Proses P" << pList[i].id 
+            << " -> Waktu Masuk: " << waktuSekarang << " menit"
+            << " | Waktu Tunggu: " << pList[i].waitingTime << " menit"
+            << " | Durasi: " << pList[i].burstTime << " menit"
+            << " | Waktu Selesai: " << (waktuSekarang + pList[i].burstTime) << " menit\n";
 
-        currentTime += queueList[i].burstTime;
+        waktuSekarang += pList[i].burstTime;
     }
 
-    fileOutput << "--------------------------------------------------\n";
-    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " menit\n\n\n";
+    out << "--------------------------------------------------\n";
+    out << "Rata-rata Waiting Time: " << (totalNunggu / jmlProses) << " menit\n\n\n";
 }
 
 // =================================================================
 // 2. METODE PRIORITY SCHEDULING
 // =================================================================
-void executePriorityNonPreemptive(vector<Process> queueList, ofstream& fileOutput) {
-    int currentTime = 0; 
-    float totalWaitingTime = 0;
-    int totalProcess = queueList.size();
-    int processDone = 0;
-    int urutanPanggil = 1;
+void jalaninPriority(vector<Process> pList, ofstream& out) {
+    int waktuSekarang = 0; 
+    float totalNunggu = 0;
+    int jmlProses = pList.size();
+    int ygUdahSelesai = 0;
+    int noUrut = 1;
 
-    fileOutput << "=== HASIL SIMULASI: PRIORITY NON-PREEMPTIVE ===\n";
-    fileOutput << "Riwayat Panggilan Antrean:\n";
+    out << "=== HASIL SIMULASI: PRIORITY NON-PREEMPTIVE ===\n";
+    out << "Riwayat Panggilan Antrean:\n";
 
-    while (processDone < totalProcess) {
-        int selectedIndex = -1;
-        int highestPriority = 99999;       
-        int earliestArrival = 99999;
+    while (ygUdahSelesai < jmlProses) {
+        int indexKepilih = -1;
+        int prioritasTertinggi = 99999;       
+        int datengPalingAwal = 99999;
 
-        for (int i = 0; i < totalProcess; i++) {
-            if (!queueList[i].isCompleted && queueList[i].arrivalTime <= currentTime) {
-                if (queueList[i].priority < highestPriority) {
-                    highestPriority = queueList[i].priority;
-                    earliestArrival = queueList[i].arrivalTime;
-                    selectedIndex = i;
+        for (int i = 0; i < jmlProses; i++) {
+            // cek yg udah dateng & blm kelar
+            if (!pList[i].isCompleted && pList[i].arrivalTime <= waktuSekarang) {
+                if (pList[i].priority < prioritasTertinggi) {
+                    prioritasTertinggi = pList[i].priority;
+                    datengPalingAwal = pList[i].arrivalTime;
+                    indexKepilih = i;
                 } 
-                else if (queueList[i].priority == highestPriority) {
-                    if (queueList[i].arrivalTime < earliestArrival) {
-                        earliestArrival = queueList[i].arrivalTime;
-                        selectedIndex = i;
+                else if (pList[i].priority == prioritasTertinggi) {
+                    // tie breaker kalo prioritas sama
+                    if (pList[i].arrivalTime < datengPalingAwal) {
+                        datengPalingAwal = pList[i].arrivalTime;
+                        indexKepilih = i;
                     }
                 }
             }
         }
 
-        if (selectedIndex == -1) {
-            currentTime++; 
+        if (indexKepilih == -1) {
+            waktuSekarang++; 
         } 
         else {
-            int i = selectedIndex;
-            queueList[i].waitingTime = currentTime - queueList[i].arrivalTime;
-            totalWaitingTime += queueList[i].waitingTime;
+            int i = indexKepilih;
+            pList[i].waitingTime = waktuSekarang - pList[i].arrivalTime;
+            totalNunggu += pList[i].waitingTime;
 
-            // Output dibikin kaya struk/nomor antrean ke bawah, ditambah info kasta
-            fileOutput << urutanPanggil++ << ". Proses P" << queueList[i].id 
-                       << " [Prioritas " << queueList[i].priority << "]"
-                       << " -> Waktu Masuk: " << currentTime << " menit"
-                       << " | Waktu Tunggu: " << queueList[i].waitingTime << " menit"
-                       << " | Durasi: " << queueList[i].burstTime << " menit"
-                       << " | Waktu Selesai: " << (currentTime + queueList[i].burstTime) << " menit\n";
+            out << noUrut++ << ". Proses P" << pList[i].id 
+                << " [Prioritas " << pList[i].priority << "]"
+                << " -> Waktu Masuk: " << waktuSekarang << " menit"
+                << " | Waktu Tunggu: " << pList[i].waitingTime << " menit"
+                << " | Durasi: " << pList[i].burstTime << " menit"
+                << " | Waktu Selesai: " << (waktuSekarang + pList[i].burstTime) << " menit\n";
 
-            currentTime += queueList[i].burstTime;
-            queueList[i].isCompleted = true; 
-            processDone++;
+            waktuSekarang += pList[i].burstTime;
+            pList[i].isCompleted = true; 
+            ygUdahSelesai++;
         }
     }
 
-    fileOutput << "--------------------------------------------------\n";
-    fileOutput << "Rata-rata Waiting Time: " << (totalWaitingTime / totalProcess) << " menit\n";
+    out << "--------------------------------------------------\n";
+    out << "Rata-rata Waiting Time: " << (totalNunggu / jmlProses) << " menit\n\n\n";
+}
+
+// =================================================================
+// 3. METODE SJF (Shortest Job First)
+// =================================================================
+void jalaninSJF(vector<Process> pList, ofstream& out) {
+    int waktuSekarang = 0; 
+    float totalNunggu = 0;
+    int jmlProses = pList.size();
+    int ygUdahSelesai = 0;
+    int noUrut = 1;
+
+    out << "=== HASIL SIMULASI: SJF NON-PREEMPTIVE ===\n";
+    out << "Riwayat Panggilan Antrean:\n";
+
+    while (ygUdahSelesai < jmlProses) {
+        int indexKepilih = -1;
+        int durasiTercepat = 99999; // buat nyari burst time paling kecil
+        int datengPalingAwal = 99999;
+
+        for (int i = 0; i < jmlProses; i++) {
+            if (!pList[i].isCompleted && pList[i].arrivalTime <= waktuSekarang) {
+                // cek durasi paling cepet
+                if (pList[i].burstTime < durasiTercepat) {
+                    durasiTercepat = pList[i].burstTime;
+                    datengPalingAwal = pList[i].arrivalTime;
+                    indexKepilih = i;
+                } 
+                else if (pList[i].burstTime == durasiTercepat) {
+                    // tie breaker kalo durasi sama, pilih yg dtg duluan
+                    if (pList[i].arrivalTime < datengPalingAwal) {
+                        datengPalingAwal = pList[i].arrivalTime;
+                        indexKepilih = i;
+                    }
+                }
+            }
+        }
+
+        if (indexKepilih == -1) {
+            waktuSekarang++; 
+        } 
+        else {
+            int i = indexKepilih;
+            pList[i].waitingTime = waktuSekarang - pList[i].arrivalTime;
+            totalNunggu += pList[i].waitingTime;
+
+            out << noUrut++ << ". Proses P" << pList[i].id 
+                << " -> Waktu Masuk: " << waktuSekarang << " menit"
+                << " | Waktu Tunggu: " << pList[i].waitingTime << " menit"
+                << " | Durasi: " << pList[i].burstTime << " menit"
+                << " | Waktu Selesai: " << (waktuSekarang + pList[i].burstTime) << " menit\n";
+
+            waktuSekarang += pList[i].burstTime;
+            pList[i].isCompleted = true; 
+            ygUdahSelesai++;
+        }
+    }
+
+    out << "--------------------------------------------------\n";
+    out << "Rata-rata Waiting Time: " << (totalNunggu / jmlProses) << " menit\n";
 }
 
 int main() {
-    cout << "Silakan pilih file input.txt dari File Explorer yang muncul..." << endl;
+    cout << "Pilih file input.txt nya di window yg muncul ya..." << endl;
     
     string pathFile = bukaFileExplorer();
 
     if (pathFile == "") {
-        cout << "Batal milih file. Program berhenti." << endl;
+        cout << "Gak ada file yg dipilih. Program udahan." << endl;
         return 1;
     }
 
-    cout << "File yang dipilih: " << pathFile << endl;
+    cout << "File yg kepilih: " << pathFile << endl;
 
-    ifstream fileInput(pathFile);
-    ofstream fileOutput("output_log.txt");
+    ifstream fileIn(pathFile);
+    ofstream fileOut("output_log.txt");
 
-    if (!fileInput) {
-        cout << "Waduh file gagal dibaca!" << endl;
+    if (!fileIn) {
+        cout << "Duh file nya error ga bisa dibaca!" << endl;
         return 1;
     }
 
-    vector<Process> dataAntrean;
+    vector<Process> daftarProses;
     Process p;
 
-    while (fileInput >> p.id >> p.arrivalTime >> p.burstTime >> p.priority) {
+    // baca isi file
+    while (fileIn >> p.id >> p.arrivalTime >> p.burstTime >> p.priority) {
         p.waitingTime = 0;
         p.isCompleted = false;
-        dataAntrean.push_back(p);
+        daftarProses.push_back(p);
     }
 
-    executeFCFS(dataAntrean, fileOutput);
-    executePriorityNonPreemptive(dataAntrean, fileOutput);
+    // adu ketiga metode
+    jalaninFCFS(daftarProses, fileOut);
+    jalaninPriority(daftarProses, fileOut);
+    jalaninSJF(daftarProses, fileOut);
 
-    fileInput.close();
-    fileOutput.close();
+    fileIn.close();
+    fileOut.close();
 
-    cout << "Simulasi kelar! Otomatis buka log hasil..." << endl;
+    cout << "Beres! Langsung buka output_log.txt..." << endl;
 
     system("start output_log.txt");
 
